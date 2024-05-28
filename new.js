@@ -122,6 +122,120 @@ async function getAccountInfo(token) {
   }
 }
 
+
+async function getAccountBuildInfo(token) {
+  try {
+    const response = await axios.get(
+      "https://api.yescoin.gold/build/getAccountBuildInfo",
+      {
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Accept-Encoding": "gzip, deflate, br, zstd",
+          "Accept-Language": "en-US,en;q=0.9",
+          Origin: "https://www.yescoin.gold",
+          Priority: "u=1, i",
+          Referer: "https://www.yescoin.gold/",
+          "Sec-Ch-Ua": '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24", "Microsoft Edge WebView2";v="125"',
+          "Sec-Ch-Ua-Mobile": "?0",
+          "Sec-Ch-Ua-Platform": '"Windows"',
+          "Sec-Fetch-Dest": "empty",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Site": "same-site",
+          Token: token,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+async function levelUp(token, skill) {
+  try {
+    const response = await axios.post(
+      "https://api.yescoin.gold/build/levelUp",
+      skill,
+      {
+        headers: {
+          "accept": "application/json, text/plain, */*",
+          "accept-language": "en-US,en;q=0.9",
+          "content-type": "application/json",
+          "priority": "u=1, i",
+          "sec-ch-ua": "\"Microsoft Edge\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\", \"Microsoft Edge WebView2\";v=\"125\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-site",
+          "token": token,
+          "Referer": "https://www.yescoin.gold/",
+          "Referrer-Policy": "strict-origin-when-cross-origin"
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+
+async function recoverCoinPool(token) {
+  try {
+    const response = await axios.post(
+      "https://api.yescoin.gold/game/recoverCoinPool",
+      null,
+      {
+        headers: {
+          "accept": "application/json, text/plain, */*",
+          "accept-language": "en-US,en;q=0.9",
+          "content-type": "application/x-www-form-urlencoded",
+          "priority": "u=1, i",
+          "sec-ch-ua": "\"Microsoft Edge\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\", \"Microsoft Edge WebView2\";v=\"125\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-site",
+          "token": token,
+          "Referer": "https://www.yescoin.gold/",
+          "Referrer-Policy": "strict-origin-when-cross-origin"
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+async function optionMenu(token) {
+  try {
+    const { currentAmount } = await getAccountInfo(token).then((response) => response.data);
+    const { coinPoolLeftRecoveryCount, singleCoinLevel, singleCoinUpgradeCost, coinPoolRecoveryLevel, coinPoolRecoveryUpgradeCost, coinPoolTotalLevel, coinPoolTotalUpgradeCost } = await getAccountBuildInfo(token).then((response) => response.data);
+    if (singleCoinLevel <= 3 && currentAmount > singleCoinUpgradeCost) {
+      await levelUp(token, 1).then((response) => response.data);
+    } else if (coinPoolRecoveryLevel <= 10 && currentAmount > coinPoolRecoveryUpgradeCost) {
+      await levelUp(token, 2).then((response) => response.data);
+    } else if (coinPoolTotalLevel <= 10 && currentAmount > coinPoolTotalUpgradeCost) {
+      await levelUp(token, 3).then((response) => response.data);
+    }
+
+    if (coinPoolLeftRecoveryCount > 0) {
+      await recoverCoinPool(token);
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
 (async () => {
   console.log("1. Add Token");
   console.log("2. Delete All Tokens");
@@ -152,18 +266,20 @@ async function getAccountInfo(token) {
             const {
               data: { userId, userLevel, rank, currentAmount },
             } = await getAccountInfo(token).then((response) => response);
+            const { coinPoolLeftRecoveryCount, singleCoinLevel, coinPoolRecoveryLevel, coinPoolTotalLevel } = await getAccountBuildInfo(token).then((response) => response.data);
 
             // console.log(status)
 
             twisters.put(token, {
-              text: `userId : ${userId} | userLevel : ${userLevel} | rank : ${rank} | currentAmount : ${currentAmount}`,
+              text: `userId : ${userId} | userLevel : ${userLevel} | rank : ${rank} | CoinLvl : ${singleCoinLevel} | RecoveryLvl : ${coinPoolRecoveryLevel} | PoolTotalLvl : ${coinPoolTotalLevel} | Recovery : ${coinPoolLeftRecoveryCount} | currentAmount : ${currentAmount}`,
             });
           } while (status !== "left coin not enough");
+          await optionMenu(token);
         } catch (error) {
           console.log(`Error collecting coin for token ${token}:`, error);
         }
       }
-      await delay(60000);
+      await delay(10000);
     }
   } else {
     console.log("Invalid choice. Please try again.");
