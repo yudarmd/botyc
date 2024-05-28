@@ -142,7 +142,6 @@ async function getAccountInfo(token) {
     }
 
     while (true) {
-
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         let status = null;
@@ -154,12 +153,14 @@ async function getAccountInfo(token) {
               data: { userId, userLevel, rank, currentAmount },
             } = await getAccountInfo(token).then((response) => response);
 
+            // console.log(status)
+
             twisters.put(token, {
               text: `userId : ${userId} | userLevel : ${userLevel} | rank : ${rank} | currentAmount : ${currentAmount}`,
             });
-          } while (status !== "Successd");
+          } while (status !== "left coin not enough");
         } catch (error) {
-          console.error(`Error collecting coin for token ${token}:`, error);
+          console.log(`Error collecting coin for token ${token}:`, error);
         }
       }
       await delay(60000);
