@@ -268,8 +268,6 @@ async function optionMenu(token) {
             } = await getAccountInfo(token).then((response) => response);
             const { coinPoolLeftRecoveryCount, singleCoinLevel, coinPoolRecoveryLevel, coinPoolTotalLevel } = await getAccountBuildInfo(token).then((response) => response.data);
 
-            // console.log(status)
-
             twisters.put(token, {
               text: `userId : ${userId} | userLevel : ${userLevel} | rank : ${rank} | CoinLvl : ${singleCoinLevel} | RecoveryLvl : ${coinPoolRecoveryLevel} | PoolTotalLvl : ${coinPoolTotalLevel} | Recovery : ${coinPoolLeftRecoveryCount} | currentAmount : ${currentAmount}`,
             });
@@ -279,7 +277,7 @@ async function optionMenu(token) {
           console.log(`Error collecting coin for token ${token}:`, error);
         }
       }
-      await delay(10000);
+      await delay(60000);
     }
   } else {
     console.log("Invalid choice. Please try again.");
